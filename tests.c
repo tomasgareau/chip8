@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "chip8.h"
 #include "stack.h"
 #include "tests.h"
+#include "list.h"
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -698,26 +700,63 @@ int run_test(unsigned short test_opcode) {
     chip8_t chip8;
     init_chip8(&chip8);
     chip8.opcode = test_opcode;
-    printf("Testing opcode %04x...\n", test_opcode);
     if (test_table[(chip8.opcode >> 12)](&chip8)) {
-        printf("Failed.\n");
         return 1;
     }
     else {
-        printf("Success!\n");
         return 0;
     }
 }
 
-int main(void) {
-    char line[5];
-    for (;;) {
-        printf("Enter opcode: ");
-        unsigned int opcode;
-        fgets(line, sizeof(line), stdin);
-        getchar();
-        sscanf(line, "%4x", &opcode);
-        run_test(opcode);
+int main(int argc, char** argv) {
+    FILE *fp;
+    int size;
+    int i;
+    unsigned short opcode;
+    list_t succeeded;
+    list_t failed;
+    init_list(&succeeded, sizeof(unsigned short));
+    init_list(&failed, sizeof(unsigned short));
+
+    fp = fopen(argv[1], "r");
+    if (fp == NULL) {
+        fprintf(stderr, "File error: could not open %s.\n", argv[1]);
+        return FILE_OPEN_ERROR;
     }
+    fseek(fp, 0L, SEEK_END);
+    size = ftell(fp);
+    rewind(fp);
+
+    if (size > MEMORY_SZ - PROG_MEM_START) {
+        fputs("File error: ROM file too large.", stderr);
+        return FILE_SIZE_ERROR;
+    }
+
+    unsigned char *buffer = (unsigned char*)malloc(sizeof(unsigned char) * size);
+    if (buffer == NULL) {
+        fputs("Memory error: could not allocate buffer for ROM.", stderr);
+        return BUFFER_SIZE_ERROR;
+    }
+
+    // read ROM into buffer
+    fread(buffer, sizeof(unsigned char), size, (FILE*)fp);
+
+    for (i = 0; i < size/2; i++) {
+        opcode = (buffer[2*i] << 8) | buffer[2*i + 1];
+        if (run_test(opcode)) {
+            list_append(&failed, &opcode);
+        }
+        else {
+            list_append(&succeeded, &opcode);
+        }
+    }
+    printf("Failed:\n");
+    for (i = 0; i < list_size(&failed); i++) {
+        printf("- %04X\n", *(unsigned short *)list_get(&failed, i));
+    }
+
+    destroy_list(&succeeded);
+    destroy_list(&failed);
+    free(buffer);
     return 0;
 }
