@@ -5,8 +5,6 @@
 
 #define THOUSAND 1000L
 
-extern int draw_flag;
-
 int main(int argc, char **argv) {
     srand(time(NULL));
 
@@ -41,7 +39,7 @@ int main(int argc, char **argv) {
     while (!quit) {
 
         emulate_cycle(&chip8);
-        if (draw_flag) {
+        if (chip8.draw_flag) {
             SDL_Rect rect;
             rect.x = 0;
             rect.y = 0;
@@ -68,7 +66,7 @@ int main(int argc, char **argv) {
                 }
             }
             SDL_Flip(screen);
-            draw_flag = 0;
+            chip8.draw_flag = 0;
         }
 
         while (SDL_PollEvent (&event)) {

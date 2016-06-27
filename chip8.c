@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "chip8.h"
 #include "stack.h"
 
@@ -29,8 +30,6 @@ unsigned char fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-int draw_flag = 0;
-
 /******** CHIP8 CORE ********/
 
 
@@ -41,7 +40,7 @@ void opcode_0(chip8_t *chip8) {
         // clear the screen
         memset((void*)chip8->gfx, 0, sizeof(unsigned char) * GFX_WIDTH * GFX_HEIGHT);
         // need to update the screen
-        draw_flag = 1;
+        chip8->draw_flag = 1;
         chip8->pc += 2;
     }
     else if (chip8->opcode == 0x00EE) {
@@ -172,7 +171,7 @@ void opcode_D(chip8_t *chip8) {
     }
 
     // need to update the screen
-    draw_flag = 1;
+    chip8->draw_flag = 1;
     chip8->pc += 2;
 }
 
@@ -377,7 +376,7 @@ void arithmetic_7(chip8_t *chip8) {
 void arithmetic_E(chip8_t *chip8) {
     // shifts VX left by one. VF is set to the value of the MSB of VX before the
     // shift. (0x8XY7)
-    chip8->V[0xF] = (VX & 0x8000);
+    chip8->V[0xF] = (VX & 0x80) >> 7;
     VX <<= 1;
     chip8->pc += 2;
 }
@@ -409,6 +408,7 @@ int init_chip8(chip8_t *chip8) {
     chip8->I = 0;
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
+    chip8->draw_flag = 0;
     
     // set all the keys to 0
     memset((void*)chip8->key, 0, sizeof(unsigned char) * NUM_KEYS);

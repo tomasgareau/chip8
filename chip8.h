@@ -11,7 +11,7 @@
 #define GFX_HEIGHT 32
 #define FONT_WIDTH 4
 #define FONT_HEIGHT 5
-#define SCALE 10
+#define SCALE 20
 
 #define FILE_OPEN_ERROR 1
 #define FILE_SIZE_ERROR 2
@@ -48,6 +48,10 @@ typedef struct chip8_t
     // global variable to hold the current opcode
     // opcodes are two bytes
     unsigned short opcode;
+
+    // flag to indicate that the graphics output has changed
+    int draw_flag;
+
 } chip8_t;
 
 void (*opcode_table[16])(chip8_t *chip8);
